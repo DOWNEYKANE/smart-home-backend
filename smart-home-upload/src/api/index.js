@@ -1,5 +1,4 @@
 const express = require('express')
-const cors = require('cors')
 const config = require('./config')
 const { initDatabase } = require('./db')
 const { connectMQTT } = require('./mqtt')
@@ -8,27 +7,24 @@ const { authRequired } = require('./middleware/auth')
 
 const app = express()
 
-// CORS — 允许所有来源
-app.use(cors({
-  origin: '*',
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}))
-
-// 手动处理 OPTIONS 预检请求
-app.options('*', cors())
+// 手动 CORS — 最可靠的方式
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*')
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200)
+  }
+  next()
+})
 
 app.use(express.json())
 
-// 健康检查
 app.get('/api/health-check', (req, res) => {
   res.json({ status: 'ok', time: new Date().toISOString() })
 })
 
-// 路由 - 认证不需要登录
 app.use('/api', authRoutes)
-
-// 路由 - 设备接口需要登录
 app.use('/api', authRequired, deviceRoutes)
 
 async function start() {
