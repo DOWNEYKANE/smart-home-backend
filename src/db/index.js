@@ -13,24 +13,28 @@ function getPool() {
       database: config.db.database,
       waitForConnections: true,
       connectionLimit: 10,
-      enableKeepAlive: true
+      enableKeepAlive: true,
+      ssl: {
+        rejectUnauthorized: false
+      }
     })
   }
   return pool
 }
 
 async function initDatabase() {
-  // 先连接 MySQL（不指定数据库），创建数据库
   const initPool = mysql.createPool({
     host: config.db.host,
     port: config.db.port,
     user: config.db.user,
-    password: config.db.password
+    password: config.db.password,
+    ssl: {
+      rejectUnauthorized: false
+    }
   })
   await initPool.execute(`CREATE DATABASE IF NOT EXISTS \`${config.db.database}\` DEFAULT CHARACTER SET utf8mb4`)
   await initPool.end()
 
-  // 连到目标数据库，建表
   const pool = getPool()
 
   await pool.execute(`
@@ -64,7 +68,6 @@ async function initDatabase() {
     )
   `)
 
-  // 插入默认管理员
   const bcrypt = require('bcryptjs')
   const hash = bcrypt.hashSync('123456', 10)
   await pool.execute(
