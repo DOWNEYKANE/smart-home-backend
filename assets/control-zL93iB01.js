@@ -1,1 +1,0 @@
-import{g as l,l as t}from"./index-Bz0FBjju.js";import{a as i,d as c,b as u,c as f}from"./feeder-BRtsLaJL.js";const m={environment:f,health:u,irrigation:c,feeder:i},v=l("control",()=>{const o=t(!1),n=t(null);async function a(r,s){o.value=!0;const e=m[r];e&&(n.value=await e(s)),o.value=!1}return{pending:o,lastResult:n,sendCommand:a}});export{v as u};
