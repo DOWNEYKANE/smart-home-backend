@@ -1,82 +1,43 @@
-const mysql = require('mysql2/promise')
-const config = require('../config')
+const express = require('express')
+const config = require('./config')
+const { initDatabase } = require('./db')
+const { connectMQTT } = require('./mqtt')
+const { authRoutes, deviceRoutes } = require('./routes')
+const { authRequired } = require('./middleware/auth')
 
-let pool = null
+const app = express()
 
-function getPool() {
-  if (!pool) {
-    pool = mysql.createPool({
-      host: config.db.host,
-      port: config.db.port,
-      user: config.db.user,
-      password: config.db.password,
-      database: config.db.database,
-      waitForConnections: true,
-      connectionLimit: 10,
-      enableKeepAlive: true,
-      ssl: {
-        rejectUnauthorized: false
-      }
-    })
+// CORS
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*')
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200)
   }
-  return pool
+  next()
+})
+
+app.use(express.json())
+
+app.get('/api/health-check', (req, res) => {
+  res.json({ status: 'ok', time: new Date().toISOString() })
+})
+
+app.use('/api', authRoutes)
+app.use('/api', authRequired, deviceRoutes)
+
+async function start() {
+  try {
+    await initDatabase()
+    connectMQTT()
+    app.listen(config.port, '0.0.0.0', () => {
+      console.log(`[Server] 后端服务已启动: http://0.0.0.0:${config.port}`)
+    })
+  } catch (e) {
+    console.error('[Server] 启动失败:', e)
+    process.exit(1)
+  }
 }
 
-async function initDatabase() {
-  const initPool = mysql.createPool({
-    host: config.db.host,
-    port: config.db.port,
-    user: config.db.user,
-    password: config.db.password,
-    ssl: {
-      rejectUnauthorized: false
-    }
-  })
-  await initPool.execute(`CREATE DATABASE IF NOT EXISTS \`${config.db.database}\` DEFAULT CHARACTER SET utf8mb4`)
-  await initPool.end()
-
-  const pool = getPool()
-
-  await pool.execute(`
-    CREATE TABLE IF NOT EXISTS users (
-      id INT AUTO_INCREMENT PRIMARY KEY,
-      username VARCHAR(50) NOT NULL UNIQUE,
-      password VARCHAR(200) NOT NULL,
-      nickname VARCHAR(50) DEFAULT '',
-      role VARCHAR(20) DEFAULT 'user',
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )
-  `)
-
-  await pool.execute(`
-    CREATE TABLE IF NOT EXISTS device_data (
-      id INT AUTO_INCREMENT PRIMARY KEY,
-      device_type VARCHAR(20) NOT NULL,
-      data JSON NOT NULL,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      INDEX idx_device_type_time (device_type, created_at)
-    )
-  `)
-
-  await pool.execute(`
-    CREATE TABLE IF NOT EXISTS control_logs (
-      id INT AUTO_INCREMENT PRIMARY KEY,
-      device_type VARCHAR(20) NOT NULL,
-      command JSON NOT NULL,
-      result INT DEFAULT 0,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )
-  `)
-
-  const bcrypt = require('bcryptjs')
-  const hash = bcrypt.hashSync('123456', 10)
-  await pool.execute(
-    `INSERT IGNORE INTO users (username, password, nickname, role) VALUES (?, ?, ?, ?)`,
-    ['admin', hash, '管理员', 'admin']
-  )
-
-  console.log('[DB] 数据库初始化完成')
-  return pool
-}
-
-module.exports = { getPool, initDatabase }
+start()
