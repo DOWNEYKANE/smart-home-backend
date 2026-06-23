@@ -17,9 +17,9 @@ app.get('/api/health-check', (req, res) => {
 app.use('/api', authRoutes)
 app.use('/api', authRequired, deviceRoutes)
 
-// 静态文件（前端 dist）
+// 静态文件
 const staticDir = path.join(__dirname, '..', 'dist')
-app.use(express.static(staticDir))
+app.use(express.static(staticDir, { index: 'index.html' }))
 
 // SPA fallback — 非 API 请求全部返回 index.html
 app.get('*', (req, res) => {
@@ -27,6 +27,7 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(staticDir, 'index.html'))
 })
 
+// 启动
 async function start() {
   try {
     await initDatabase()
