@@ -1,0 +1,32 @@
+name: Build and Push Backend
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Login to ACR
+        uses: docker/login-action@v3
+        with:
+          registry: crpi-lif1y1lrvbg6uixb.cn-guangzhou.personal.cr.aliyuncs.com
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: crpi-lif1y1lrvbg6uixb.cn-guangzhou.personal.cr.aliyuncs.com/downeykane/smart-home-backend:latest
