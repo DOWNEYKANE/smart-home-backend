@@ -17,13 +17,13 @@ app.get('/api/health-check', (req, res) => {
 app.use('/api', authRoutes)
 app.use('/api', authRequired, deviceRoutes)
 
-// 静态文件
+// 静态文件 + SPA fallback
 const staticDir = path.join(__dirname, '..', 'dist')
-app.use(express.static(staticDir, { index: false }))
-
-// 所有非 API 请求 → index.html
-app.get(/^(?!\/api).*/, (req, res) => {
-  res.sendFile(path.join(staticDir, 'index.html'))
+app.use(express.static(staticDir))
+app.use((req, res) => {
+  if (!req.path.startsWith('/api')) {
+    res.sendFile(path.join(staticDir, 'index.html'))
+  }
 })
 
 async function start() {
@@ -33,7 +33,7 @@ async function start() {
     connectMQTT()
     console.log('[MQTT] MQTT 客户端已启动')
     app.listen(config.port, '0.0.0.0', () => {
-      console.log(`[Server] 后端+前端服务已启动: http://0.0.0.0:${config.port}`)
+      console.log(`[Server] 已启动: http://0.0.0.0:${config.port}`)
     })
   } catch (e) {
     console.error('[Server] 启动失败:', e)
