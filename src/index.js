@@ -17,13 +17,12 @@ app.get('/api/health-check', (req, res) => {
 app.use('/api', authRoutes)
 app.use('/api', authRequired, deviceRoutes)
 
-// 静态文件（前端 dist）
+// 静态文件
 const staticDir = path.join(__dirname, '..', 'dist')
-app.use(express.static(staticDir))
+app.use(express.static(staticDir, { index: false }))
 
-// SPA fallback — 非 API 请求全部返回 index.html
-app.get('*', (req, res) => {
-  if (req.path.startsWith('/api')) return res.status(404).json({ code: 404 })
+// 所有非 API 请求 → index.html
+app.get(/^(?!\/api).*/, (req, res) => {
   res.sendFile(path.join(staticDir, 'index.html'))
 })
 
@@ -31,10 +30,8 @@ async function start() {
   try {
     await initDatabase()
     console.log('[DB] 数据库就绪')
-
     connectMQTT()
     console.log('[MQTT] MQTT 客户端已启动')
-
     app.listen(config.port, '0.0.0.0', () => {
       console.log(`[Server] 后端+前端服务已启动: http://0.0.0.0:${config.port}`)
     })
