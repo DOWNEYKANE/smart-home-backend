@@ -1,5 +1,6 @@
 const express = require('express')
 const path = require('path')
+const fs = require('fs')
 const config = require('./config')
 const { initDatabase } = require('./db')
 const { connectMQTT } = require('./mqtt')
@@ -17,22 +18,15 @@ app.get('/api/health-check', (req, res) => {
 app.use('/api', authRoutes)
 app.use('/api', authRequired, deviceRoutes)
 
-// 静态文件
-const staticDir = path.join(__dirname, '..', 'dist')
-app.use(express.static(staticDir))
-
-// 兜底：直接返回 index.html
-app.use((req, res, next) => {
-  if (req.path.startsWith('/api')) return next()
-  const fs = require('fs')
-  const html = path.join(staticDir, 'index.html')
-  if (fs.existsSync(html)) {
-    res.sendFile(html)
-  } else {
-    res.status(500).send('dist/index.html not found. Files: ' + fs.readdirSync(staticDir).join(', '))
-  }
+// 默认返回 index.html
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'dist', 'index.html'))
 })
 
+// 静态文件
+app.use(express.static(path.join(__dirname, '..', 'dist')))
+
+// 启动
 async function start() {
   try {
     await initDatabase()
