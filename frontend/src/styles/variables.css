@@ -1,0 +1,40 @@
+:root {
+  --color-primary: #4096ff;
+  --color-primary-light: #e6f4ff;
+  --color-success: #52c41a;
+  --color-warning: #faad14;
+  --color-danger: #ff4d4f;
+  --color-bg: #f0f2f5;
+  --color-card: #ffffff;
+  --color-text: #262626;
+  --color-text-secondary: #8c8c8c;
+  --color-border: #e8e8e8;
+  --color-header-bg: #001529;
+  --color-header-text: #ffffff;
+  --color-sidebar-bg: #ffffff;
+  --color-sidebar-active: #e6f4ff;
+  --color-sidebar-text: #595959;
+
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-header: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+  --radius: 8px;
+  --radius-sm: 4px;
+
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+
+  --font-xs: 12px;
+  --font-sm: 13px;
+  --font-md: 14px;
+  --font-lg: 16px;
+  --font-xl: 20px;
+  --font-xxl: 28px;
+
+  --sidebar-width: 220px;
+  --header-height: 56px;
+  --mobile-tab-height: 56px;
+}
